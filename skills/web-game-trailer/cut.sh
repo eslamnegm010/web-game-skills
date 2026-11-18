@@ -11,8 +11,13 @@
 set -euo pipefail
 cmd="${1:-}"; shift || true
 command -v ffmpeg >/dev/null || { echo "ffmpeg not found (macOS: brew install ffmpeg · Windows: winget install ffmpeg · Linux: your package manager)" >&2; exit 2; }
-PY="$(command -v python3 || command -v python || command -v py || true)" # Windows has no python3: it is python or the py launcher
-[[ -n "$PY" ]] || { echo "python not found (needed for take metadata and the contact sheet)" >&2; exit 2; }
+# Pick a Python that really runs: Windows ships Store stubs named python.exe/python3.exe that sit on
+# PATH, print "Python was not found" and exit 9009, so existing is not enough — probe each candidate.
+PY=""
+for cand in python3 py python; do
+  if command -v "$cand" >/dev/null && "$cand" -c 'import sys; sys.exit(0 if sys.version_info[0] == 3 else 1)' 2>/dev/null; then PY="$cand"; break; fi
+done
+[[ -n "$PY" ]] || { echo "python 3 not found (needed for take metadata and the contact sheet)" >&2; exit 2; }
 take_fps() { "$PY" -c "import json,sys;print(json.load(open(sys.argv[1]+'/take.json'))['fps'])" "$1" 2>/dev/null || echo 60; }
 fit() { echo "scale=$1:$2:force_original_aspect_ratio=increase:flags=lanczos,crop=$1:$2,setsar=1"; }
 

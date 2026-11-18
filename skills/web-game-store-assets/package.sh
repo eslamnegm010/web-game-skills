@@ -16,10 +16,26 @@ find "$dist" -name '.DS_Store' -delete
 out="release/$name-$portal"
 rm -rf "$out" "$out.zip"; mkdir -p release
 cp -R "$dist" "$out"
-# Git Bash on Windows ships no `zip`: fall back to PowerShell's Compress-Archive (same layout: files at the root).
-if command -v zip >/dev/null; then (cd "$dist" && zip -qr "$root/$out.zip" .)
-elif command -v powershell.exe >/dev/null; then powershell.exe -NoProfile -Command "Compress-Archive -Path '$(cygpath -w "$root/$dist")\*' -DestinationPath '$(cygpath -w "$root/$out.zip")' -Force"
-else echo "no way to make the zip: install zip, or run this on Windows (PowerShell is built in)" >&2; exit 1; fi
+# Making the zip, in order of preference. NOT PowerShell's Compress-Archive: on stock Windows
+# (PowerShell 5.1) it writes entry names with backslashes, which portals and non-Windows tools
+# reject or mangle. Windows' own bsdtar (System32\tar.exe, Windows 10+) writes correct zips.
+zipped=0
+if command -v zip >/dev/null && (cd "$dist" && zip -qr "$root/$out.zip" .); then zipped=1
+elif [[ -n "${SYSTEMROOT:-}" && -x "${SYSTEMROOT}/System32/tar.exe" ]] && (cd "$dist" && shopt -s dotglob nullglob && "${SYSTEMROOT}/System32/tar.exe" -a -cf "$(cygpath -w "$root/$out.zip")" -- *); then zipped=1
+else
+  for cand in python3 py python; do
+    if command -v "$cand" >/dev/null && "$cand" -c 'import sys; sys.exit(0 if sys.version_info[0] == 3 else 1)' 2>/dev/null; then
+      (cd "$dist" && "$cand" -c 'import os, sys, zipfile
+with zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED) as z:
+    for base, _dirs, files in os.walk("."):
+        for f in files:
+            p = os.path.join(base, f)
+            z.write(p, os.path.relpath(p, ".").replace(os.sep, "/"))' "$root/$out.zip") && zipped=1
+      break
+    fi
+  done
+fi
+[[ $zipped -eq 1 ]] || { echo "no way to make the zip: install zip or Python 3 (on Windows, System32 tar.exe should exist)" >&2; exit 1; }
 
 files="$(find "$dist" -type f | wc -l | tr -d ' ')"
 kb="$(du -sk "$dist" | cut -f1)"
