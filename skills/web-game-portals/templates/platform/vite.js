@@ -11,6 +11,8 @@ const HEAD = {
   gamepix: () => `
     <script>window.GamePixConfig = { lifecycle: "manual" };</script>
     <script src="https://integration.gamepix.com/sdk/v3/gamepix.sdk.js"></script>`,
+  playgama: () => `
+    <script src="https://bridge.playgama.com/v2/stable/playgama-bridge.js"></script>`,
   y8: () => `
     <script src="https://cdn.y8.com/minimal-sdk/2-0/y8.min.js" async></script>
     <script>
@@ -26,11 +28,25 @@ const HEAD = {
   // @platform-head
 };
 
+/** The bridge config the Playgama build must ship next to index.html (the cabinet fills in the ids at submission). */
+const PLAYGAMA_BRIDGE_CONFIG = {
+  advertisement: { minimumDelayBetweenInterstitial: 60 },
+};
+
 /** Injects the portal's SDK tags first in <head>, and drops tags that load from other domains when the
  *  portal forbids them (fonts from a CDN, for example: bundle them instead). */
 export function platformHtml() {
   return {
     name: "platform-html",
+    // Playgama only: the bridge refuses a build whose config file is missing next to index.html.
+    generateBundle() {
+      if (target !== "playgama") return;
+      this.emitFile({
+        type: "asset",
+        fileName: "playgama-bridge-config.json",
+        source: JSON.stringify(PLAYGAMA_BRIDGE_CONFIG, null, 2),
+      });
+    },
     transformIndexHtml: {
       order: "pre",
       handler(html) {

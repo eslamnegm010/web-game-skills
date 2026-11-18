@@ -12,7 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Claude%20Code-skills-d97757" alt="Claude Code skills">
   <img src="https://img.shields.io/badge/games-three.js%20%2F%20canvas%20%2F%20Vite-24824a" alt="three.js / canvas / Vite">
-  <img src="https://img.shields.io/badge/portals-CrazyGames%20%C2%B7%20Y8%20%C2%B7%20GamePix%20%C2%B7%20any-7c3aed" alt="Portals: CrazyGames, Y8, GamePix, any">
+  <img src="https://img.shields.io/badge/portals-CrazyGames%20%C2%B7%20Y8%20%C2%B7%20GamePix%20%C2%B7%20Playgama%20%C2%B7%20any-7c3aed" alt="Portals: CrazyGames, Y8, GamePix, Playgama, any">
   <img src="https://img.shields.io/badge/skills-7-0ea5e9" alt="7 skills">
 </p>
 
@@ -45,7 +45,7 @@ flowchart LR
 | [`web-game-qa`](skills/web-game-qa) | Browser test suites: smoke, devices, portal SDK integration against a fake SDK |
 | [`web-game-trailer`](skills/web-game-trailer) | Frame-by-frame gameplay recording, trailers, portal preview videos |
 | [`web-game-store-assets`](skills/web-game-store-assets) | Upload packages, covers, listing text, asset validation |
-| [`web-game-portals`](skills/web-game-portals) | Platform layer and portal knowledge: CrazyGames (default), Y8, GamePix, and a procedure for any other portal |
+| [`web-game-portals`](skills/web-game-portals) | Platform layer and portal knowledge: CrazyGames (default), Y8, GamePix, Playgama, and a procedure for any other portal |
 | [`game-code-review`](skills/game-code-review) | Review a diff of game code (web/three.js) for frame-path allocations, resource lifecycle, state bugs, and agent-written mistakes; severity-ranked report (adapted, MIT) |
 
 ## Install

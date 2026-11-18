@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Adds one portal to the project's platform layer: the adapter file, its line in index.js, and the
-# `build:<portal>` script. A portal this skill knows (crazygames, y8, gamepix) gets its tested adapter;
+# `build:<portal>` script. A portal this skill knows (crazygames, y8, gamepix, playgama) gets its tested adapter;
 # any other name gets a skeleton to fill in after researching the portal (references/new-portal.md).
 #   add-platform.sh <portal> [sdk-global]      add-platform.sh poki PokiSDK
 set -euo pipefail

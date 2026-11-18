@@ -1,6 +1,6 @@
 ---
 name: web-game-portals
-description: Publish an HTML5 or three.js browser game on game portals - CrazyGames by default, with Y8 and GamePix adapters included and a research procedure for any other portal (Poki, GameDistribution, Yandex Games, itch.io and so on). Covers the platform layer that isolates each portal's SDK (ads, saves, lifecycle signals, accounts, site mute) behind one interface chosen at build time, each portal's technical and ad rules, the submission form field by field, launch metrics and payouts. Use when building for a portal, adding an SDK or ads, adding a new portal to a game, submitting a game or a new version, reading launch metrics, or when the user names a game portal.
+description: Publish an HTML5 or three.js browser game on game portals - CrazyGames by default, with Y8, GamePix and Playgama adapters included and a research procedure for any other portal (Poki, GameDistribution, Yandex Games, itch.io and so on). Covers the platform layer that isolates each portal's SDK (ads, saves, lifecycle signals, accounts, site mute) behind one interface chosen at build time, each portal's technical and ad rules, the submission form field by field, launch metrics and payouts. Use when building for a portal, adding an SDK or ads, adding a new portal to a game, submitting a game or a new version, reading launch metrics, or when the user names a game portal.
 ---
 
 # Web game portals
@@ -10,7 +10,7 @@ description: Publish an HTML5 or three.js browser game on game portals - CrazyGa
 | Reference | Read when |
 | --- | --- |
 | `references/crazygames.md` | Anything for CrazyGames: requirements, ads, the form, QA tool, metrics, payouts. |
-| `references/y8.md`, `references/gamepix.md` | Those portals. |
+| `references/y8.md`, `references/gamepix.md`, `references/playgama.md` | Those portals. |
 | `references/other-portals.md` | Choosing where to publish; portals with no adapter yet. |
 | `references/new-portal.md` | **A portal not listed above**: how to research it and add it. |
 
