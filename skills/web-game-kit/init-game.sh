@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Prepares a Vite game project with the whole web-game skill set. Run from the project root.
-#   init-game.sh "<Game Name>" <save-prefix> [--skip implementer,platform,tests,store] [--portals "crazygames y8"]
+#   init-game.sh "<Game Name>" <save-prefix> [--skip platform,tests,store] [--portals "crazygames y8"]
 # Each step calls that skill's own init.sh; none overwrites an existing file.
 set -euo pipefail
 skills="$(cd "$(dirname "$0")/.." && pwd)"
@@ -23,6 +23,5 @@ step() { # step <key> <title> <skill> <script> [args...]
 step platform "Platform layer" web-game-portals init.sh "$prefix" $portals
 step tests "Browser tests" web-game-qa init.sh --sdk
 step store "Store kit" web-game-store-assets init.sh "$game"
-step implementer "Gemini implementer" gemini-implementer-setup init.sh
 echo
-echo "Done. Next: SKILL.md \"After the command\" (adapt AGENTS.md and the gate, wire the platform layer, fill the suites)."
+echo "Done. Next: SKILL.md \"After the command\" (write AGENTS.md and the gate, wire the platform layer, fill the suites)."
