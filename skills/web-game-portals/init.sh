@@ -14,7 +14,7 @@ for f in index.js web.js config.js vite.js; do
   if [[ -e "$dest/$f" ]]; then echo "kept     ${dest#"$root"/}/$f"
   else sed "s|__SAVE_PREFIX__|$prefix|g" "$skill_dir/templates/platform/$f" >"$dest/$f"; echo "created  ${dest#"$root"/}/$f"; fi
 done
-for p in "${portals[@]}"; do "$skill_dir/add-platform.sh" "$p"; done
+for p in "${portals[@]}"; do bash "$skill_dir/add-platform.sh" "$p"; done # via bash: survives a lost executable bit
 cat <<EOF
 
 Next (see SKILL.md "Wire the game"):

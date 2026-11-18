@@ -10,6 +10,15 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 
+// Windows install roots (Program Files, the x86 one, the per-user one): Chrome, then Chromium,
+// then Edge — Edge is Chromium under the hood and speaks the same DevTools protocol.
+const winRoots = [process.env.ProgramFiles, process.env['ProgramFiles(x86)'], process.env.LOCALAPPDATA].filter(Boolean);
+const winPaths = winRoots.flatMap((base) => [
+  `${base}\\Google\\Chrome\\Application\\chrome.exe`,
+  `${base}\\Chromium\\Application\\chrome.exe`,
+  `${base}\\Microsoft\\Edge\\Application\\msedge.exe`,
+]);
+
 const CHROME_PATHS = [
   process.env.CHROME,
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -18,6 +27,7 @@ const CHROME_PATHS = [
   '/usr/bin/google-chrome-stable',
   '/usr/bin/chromium',
   '/usr/bin/chromium-browser',
+  ...winPaths,
 ];
 
 export const DEVICES = {
@@ -85,6 +95,10 @@ export async function launch(o = {}) {
   const kill = () => {
     if (closed) return;
     closed = true;
+    // On Windows, killing the main process can leave Chrome's child processes behind: take the tree.
+    if (process.platform === 'win32' && chrome.pid) {
+      try { spawn('taskkill', ['/PID', String(chrome.pid), '/T', '/F'], { stdio: 'ignore' }); } catch { /* already gone */ }
+    }
     try { chrome.kill('SIGKILL'); } catch { /* already gone */ }
     if (ownProfile) try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* still locked */ }
   };

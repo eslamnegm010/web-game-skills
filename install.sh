@@ -25,6 +25,13 @@ query() { node -e '
     console.log([...out].join("\n"));
   }' "$repo" "$@"; }
 from_here() { [[ -L "$target/$1" && "$(readlink "$target/$1")" == "$repo/skills/$1" ]] || [[ -f "$target/$1/.installed-from" && "$(cat "$target/$1/.installed-from")" == "$repo" ]]; }
+# On Windows (Git Bash / MSYS2), `ln -s` quietly makes a copy unless the shell may create real
+# symlinks (Developer Mode or admin) AND MSYS is told to try: ask for a strict native link, then
+# check that a link is what we got. A silent copy would drift from the repo and break --update.
+try_link() { # try_link <src> <dest>: succeeds only when a real symlink was made
+  if [[ -n "${MSYSTEM:-}" ]]; then MSYS=winsymlinks:nativestrict ln -s "$1" "$2" 2>/dev/null; else ln -s "$1" "$2" 2>/dev/null; fi
+  [[ -L "$2" ]]
+}
 
 mode=install; copy=0; force=0; names=()
 while [[ $# -gt 0 ]]; do case "$1" in
@@ -74,7 +81,8 @@ while IFS= read -r n; do
     echo "backed up  $n -> $backup/$n"
   fi
   rm -rf "$dest"
-  if [[ $copy -eq 1 ]]; then cp -R "$repo/skills/$n" "$dest"; echo "$repo" >"$dest/.installed-from"; echo "copied     $n"
-  else ln -s "$repo/skills/$n" "$dest"; echo "linked     $n"; fi
+  if [[ $copy -eq 0 ]] && try_link "$repo/skills/$n" "$dest"; then echo "linked     $n"
+  else cp -R "$repo/skills/$n" "$dest"; echo "$repo" >"$dest/.installed-from"
+    if [[ $copy -eq 1 ]]; then echo "copied     $n"; else echo "copied     $n (no symlink privilege here — on Windows, Developer Mode makes it a live link)"; fi; fi
 done < <(query resolve "${names[@]}")
 echo "Restart Claude Code (or start a new session) to load new skills."

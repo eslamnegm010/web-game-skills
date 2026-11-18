@@ -7,7 +7,7 @@
 # Videos: 15-20 s, no audio track, 50 MB at most. Exit code 1 when anything is wrong or missing.
 set -uo pipefail
 dir="${1:-docs/store}"
-command -v ffprobe >/dev/null || { echo "ffprobe not found (brew install ffmpeg)" >&2; exit 2; }
+command -v ffprobe >/dev/null || { echo "ffprobe not found (it comes with ffmpeg: macOS brew install ffmpeg · Windows winget install ffmpeg)" >&2; exit 2; }
 fail=0
 bad() { echo "FAIL $*"; fail=1; }
 good() { echo "PASS $*"; }

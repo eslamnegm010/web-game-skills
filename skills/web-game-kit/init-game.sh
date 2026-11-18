@@ -16,8 +16,8 @@ step() { # step <key> <title> <skill> <script> [args...]
   local key="$1" title="$2" skill="$3" script="$4"; shift 4
   echo; echo "== $title"
   if [[ "$skip" == *",$key,"* ]]; then echo "skipped (--skip)"; return; fi
-  if [[ ! -x "$skills/$skill/$script" ]]; then echo "skipped: the $skill skill is not installed"; return; fi
-  "$skills/$skill/$script" "$@"
+  if [[ ! -f "$skills/$skill/$script" ]]; then echo "skipped: the $skill skill is not installed"; return; fi
+  bash "$skills/$skill/$script" "$@" # via bash: a clone that lost the executable bit still works
 }
 # shellcheck disable=SC2086
 step platform "Platform layer" web-game-portals init.sh "$prefix" $portals

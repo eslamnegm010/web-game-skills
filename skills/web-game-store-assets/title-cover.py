@@ -20,10 +20,14 @@ COVERS = [
     ("portrait", (800, 1200), 0.158, 0.5, 0.715),
     ("square", (800, 800), 0.128, 0.5, 0.715),
 ]
+_WINDIR = os.environ.get("WINDIR", "C:\\Windows")
 FONTS = [
     "/System/Library/Fonts/Supplemental/Impact.ttf",
     "/System/Library/Fonts/Supplemental/Arial Black.ttf",
+    os.path.join(_WINDIR, "Fonts", "impact.ttf"),  # Windows: Impact
+    os.path.join(_WINDIR, "Fonts", "ariblk.ttf"),  # Windows: Arial Black
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    os.path.join(_WINDIR, "Fonts", "arialbd.ttf"),  # Windows: Arial Bold
 ]
 
 

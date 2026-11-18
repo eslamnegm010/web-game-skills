@@ -16,7 +16,10 @@ find "$dist" -name '.DS_Store' -delete
 out="release/$name-$portal"
 rm -rf "$out" "$out.zip"; mkdir -p release
 cp -R "$dist" "$out"
-(cd "$dist" && zip -qr "$root/$out.zip" .)
+# Git Bash on Windows ships no `zip`: fall back to PowerShell's Compress-Archive (same layout: files at the root).
+if command -v zip >/dev/null; then (cd "$dist" && zip -qr "$root/$out.zip" .)
+elif command -v powershell.exe >/dev/null; then powershell.exe -NoProfile -Command "Compress-Archive -Path '$(cygpath -w "$root/$dist")\*' -DestinationPath '$(cygpath -w "$root/$out.zip")' -Force"
+else echo "no way to make the zip: install zip, or run this on Windows (PowerShell is built in)" >&2; exit 1; fi
 
 files="$(find "$dist" -type f | wc -l | tr -d ' ')"
 kb="$(du -sk "$dist" | cut -f1)"

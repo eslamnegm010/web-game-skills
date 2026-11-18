@@ -10,8 +10,10 @@
 # Frames wider or taller than the target are scaled to cover it and cropped around the centre.
 set -euo pipefail
 cmd="${1:-}"; shift || true
-command -v ffmpeg >/dev/null || { echo "ffmpeg not found (brew install ffmpeg)" >&2; exit 2; }
-take_fps() { python3 -c "import json,sys;print(json.load(open(sys.argv[1]+'/take.json'))['fps'])" "$1" 2>/dev/null || echo 60; }
+command -v ffmpeg >/dev/null || { echo "ffmpeg not found (macOS: brew install ffmpeg · Windows: winget install ffmpeg · Linux: your package manager)" >&2; exit 2; }
+PY="$(command -v python3 || command -v python || command -v py || true)" # Windows has no python3: it is python or the py launcher
+[[ -n "$PY" ]] || { echo "python not found (needed for take metadata and the contact sheet)" >&2; exit 2; }
+take_fps() { "$PY" -c "import json,sys;print(json.load(open(sys.argv[1]+'/take.json'))['fps'])" "$1" 2>/dev/null || echo 60; }
 fit() { echo "scale=$1:$2:force_original_aspect_ratio=increase:flags=lanczos,crop=$1:$2,setsar=1"; }
 
 case "$cmd" in
@@ -58,7 +60,7 @@ case "$cmd" in
   sheet)
     frames="${1:?frames dir}"; out="${2:?out.jpg}"; shift 2
     cols=6; [[ "${1:-}" == "--columns" ]] && cols="$2"
-    python3 - "$frames" "$out" "$cols" <<'PY'
+    "$PY" - "$frames" "$out" "$cols" <<'PY'
 import glob, sys
 from PIL import Image
 frames, out, cols = sys.argv[1], sys.argv[2], int(sys.argv[3])

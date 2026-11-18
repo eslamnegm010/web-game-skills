@@ -92,7 +92,9 @@ That adds the platform layer (`src/platform/`), starter browser suites (`tools/e
 
 ## Requirements
 
-Node 22+, Google Chrome, `git`. For video: `ffmpeg`. For covers: Python 3 with Pillow. The scripts are written for macOS and should run on Linux; Windows needs WSL.
+Node 22+, Google Chrome, `git`. For video: `ffmpeg`. For covers: Python 3 with Pillow (`python3` on macOS/Linux, `python` on Windows).
+
+The scripts run on macOS, Linux and Windows. If a script answers "Permission denied" right after downloading or cloning, the copy lost its executable bit — run it as `bash <script>` instead (the scripts call each other that way internally, so only the first command needs it). On Windows, run the `.sh` scripts from **Git Bash** (it ships with [Git for Windows](https://gitforwindows.org/)) or from WSL — not from PowerShell or cmd. Chrome, Chromium and Edge are all found automatically. Two Windows notes: `install.sh` links skills into `~/.claude/skills` only when the shell may create symlinks (Developer Mode or an admin shell); otherwise it copies them and says so — re-run `install.sh --update` after a `git pull` in that case. And `package.sh` makes its zip with PowerShell's `Compress-Archive` when no `zip` command exists.
 
 ## Credits
 

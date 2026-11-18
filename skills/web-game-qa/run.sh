@@ -13,7 +13,7 @@ E2E_DIR="${E2E_DIR:-tools/e2e}"
 export OUT="${OUT:-${TMPDIR:-/tmp}/$(basename "$root")-e2e}"
 export WEB_GAME_QA="$skill_dir/lib/suite.mjs"
 preview="$skill_dir/../web-game-capture/with-preview.sh"
-[[ -x "$preview" ]] || { echo "web-game-capture skill is missing next to web-game-qa" >&2; exit 2; }
+[[ -f "$preview" ]] || { echo "web-game-capture skill is missing next to web-game-qa" >&2; exit 2; }
 shopt -s nullglob
 files=("$E2E_DIR"/*.e2e.mjs)
 [[ ${#files[@]} -gt 0 ]] || { echo "no suites in $E2E_DIR (run init.sh to add the starter suites)" >&2; exit 2; }
@@ -46,13 +46,13 @@ for tagged in "${platforms[@]}"; do
     done
   } >"$runner"
   log="$(mktemp)"
-  if [[ -n "$p" ]]; then "$preview" -p "$p" -- bash "$runner" | tee "$log"; else "$preview" -- bash "$runner" | tee "$log"; fi
+  if [[ -n "$p" ]]; then bash "$preview" -p "$p" -- bash "$runner" | tee "$log"; else bash "$preview" -- bash "$runner" | tee "$log"; fi
   total_pass=$((total_pass + $(grep -c '^PASS' "$log" || true)))
   total_fail=$((total_fail + $(grep -c '^FAIL' "$log" || true)))
   ran=$((ran + ${#group[@]}))
   rm -f "$runner" "$log"
 done
-pkill -f "web-game-chrome-" 2>/dev/null || true
+command -v pkill >/dev/null && pkill -f "web-game-chrome-" 2>/dev/null || true # no pkill on Windows: browser.mjs kills its own Chrome tree there
 echo
 echo "$ran suites · $total_pass passed · $total_fail failed · screenshots: $OUT"
 [[ $ran -gt 0 && $total_fail -eq 0 && $total_pass -gt 0 ]]
