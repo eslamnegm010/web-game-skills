@@ -1,6 +1,6 @@
 # Playgama
 
-Official: the developer cabinet at https://playgama.com and the Bridge SDK wiki at https://wiki.playgama.com/playgama/bridge-sdk/. Notes from hands-on integrations that passed Basic Certification and went live in the Sandbox. Re-read the wiki before relying on any detail.
+Official: the developer cabinet at https://playgama.com and the Bridge SDK wiki at https://wiki.playgama.com/playgama/bridge-sdk/. Notes from hands-on integration work. Re-read the wiki before relying on any detail.
 
 ## The road in
 
@@ -47,7 +47,7 @@ Bridge storage is cloud storage behind a promise API (`bridge.storage.get/set/de
 
 ## Certification findings
 
-- The automated certification can report a **rewarded-ad finding that is a false positive**. Proven against the real Bridge in a local host rig: closing a rewarded ad early never yields `rewarded` and the game correctly never pays out; watching to completion yields `rewarded` and the game revives and pays. The suspected cause is the Bridge's delayed storage flush — inside the Bridge, not fixable from game code. Verify in a local rig before changing game code for a finding; certification can be finished with that single finding noted, and the game still goes live in the Sandbox.
+- The automated certification can report a **rewarded-ad finding that is a false positive**. Proven against the real Bridge in a local host rig: closing a rewarded ad early never yields `rewarded` and the game correctly never pays out; watching to completion yields `rewarded` and the game revives and pays. The suspected cause is the Bridge's delayed storage flush — inside the Bridge, not fixable from game code. Verify in a local rig before changing game code for a finding, and describe the result to Playgama's support rather than changing correct reward logic.
 - There is no fake Bridge in `web-game-qa` yet: test with the real bridge script in a local host page, and in the cabinet's preview.
 
 ## Sandbox metrics — honestly earned only

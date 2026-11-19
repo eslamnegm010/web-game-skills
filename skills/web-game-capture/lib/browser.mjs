@@ -4,7 +4,7 @@
 //   await page.shot('out.png');
 //   await page.close();
 // Chrome is always muted and always killed, also when the script crashes.
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
@@ -23,12 +23,18 @@ const CHROME_PATHS = [
   process.env.CHROME,
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   '/Applications/Chromium.app/Contents/MacOS/Chromium',
+  '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
   '/usr/bin/google-chrome',
   '/usr/bin/google-chrome-stable',
   '/usr/bin/chromium',
   '/usr/bin/chromium-browser',
+  '/snap/bin/chromium',
+  '/usr/bin/microsoft-edge',
+  '/usr/bin/microsoft-edge-stable',
   ...winPaths,
 ];
+// Last resort: a browser on PATH under one of its usual names (Linux distributions, custom installs).
+const PATH_NAMES = ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser', 'microsoft-edge', 'chrome', 'msedge'];
 
 export const DEVICES = {
   iphone: {
@@ -59,9 +65,22 @@ const freePort = () =>
     });
   });
 
+function onPath() {
+  const exts = process.platform === 'win32' ? ['.exe'] : [''];
+  for (const dir of (process.env.PATH ?? '').split(path.delimiter).filter(Boolean)) {
+    for (const name of PATH_NAMES) {
+      for (const ext of exts) {
+        const p = path.join(dir, name + ext);
+        try { if (fs.statSync(p).isFile()) return p; } catch { /* not here */ }
+      }
+    }
+  }
+  return null;
+}
+
 export function findChrome() {
-  const found = CHROME_PATHS.find((p) => p && fs.existsSync(p));
-  if (!found) throw new Error('Chrome not found. Set CHROME=/path/to/chrome');
+  const found = CHROME_PATHS.find((p) => p && fs.existsSync(p)) ?? onPath();
+  if (!found) throw new Error('Chrome not found (Chrome, Chromium or Edge). Set CHROME=/path/to/browser');
   return found;
 }
 
@@ -76,7 +95,9 @@ export function findChrome() {
 export async function launch(o = {}) {
   const port = o.port ?? (await freePort());
   const ownProfile = !o.profile;
-  const profile = o.profile ?? fs.mkdtempSync(path.join(os.tmpdir(), 'web-game-chrome-'));
+  // The tag (set by web-game-qa's run.sh) lets a runner clean up only its own leftover browsers.
+  const tag = process.env.WEB_GAME_CHROME_TAG ? `${process.env.WEB_GAME_CHROME_TAG}-` : '';
+  const profile = o.profile ?? fs.mkdtempSync(path.join(os.tmpdir(), `web-game-chrome-${tag}`));
   const gpuArgs = o.gpu
     ? [process.platform === 'darwin' ? '--use-angle=metal' : '--use-angle=default', '--enable-gpu-rasterization', '--ignore-gpu-blocklist']
     : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
@@ -97,7 +118,8 @@ export async function launch(o = {}) {
     closed = true;
     // On Windows, killing the main process can leave Chrome's child processes behind: take the tree.
     if (process.platform === 'win32' && chrome.pid) {
-      try { spawn('taskkill', ['/PID', String(chrome.pid), '/T', '/F'], { stdio: 'ignore' }); } catch { /* already gone */ }
+      // spawnSync: this also runs from the 'exit' handler, where an async child might never start.
+      try { spawnSync('taskkill', ['/PID', String(chrome.pid), '/T', '/F'], { stdio: 'ignore' }); } catch { /* already gone */ }
     }
     try { chrome.kill('SIGKILL'); } catch { /* already gone */ }
     if (ownProfile) try { fs.rmSync(profile, { recursive: true, force: true }); } catch { /* still locked */ }

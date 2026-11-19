@@ -1,7 +1,7 @@
 # Store assets ({{GAME_NAME}})
 
-Everything to upload when publishing on a portal. Check it with
-`~/.claude/skills/web-game-store-assets/check-assets.sh` before every upload.
+Everything to upload when publishing on a portal. Check it with `check-assets.sh` from the
+`web-game-store-assets` skill before every upload.
 
 | File | What |
 | --- | --- |
@@ -17,4 +17,4 @@ Everything to upload when publishing on a portal. Check it with
 Listing text (description, controls, tags): `LISTING.md`. What was entered in each portal's form, and what
 happened: `SUBMISSIONS.md`.
 
-Upload build: `~/.claude/skills/web-game-store-assets/package.sh <portal>` → `release/`.
+Upload build: `package.sh <portal>` from the same skill → `release/`.

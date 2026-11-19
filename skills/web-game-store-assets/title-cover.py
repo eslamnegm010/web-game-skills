@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Store covers from finished art: resizes each picture to its cover size and adds the game's name.
 
-  title-cover.py --title "EXAMPLE|GAME" --art <dir> --out <dir> [--font file.ttf]
+  title-cover.sh --title "EXAMPLE|GAME" --art <dir> --out <dir> [--font file.ttf]     (or: python3 title-cover.py ...)
                  [--colors "#f0ffff/#00d6ff,#fff0f6/#ff1e6e"] [--only landscape,portrait,square]
 
 <art dir> holds landscape.png (16:9), portrait.png (2:3) and square.png, with NO text in the art.
@@ -32,8 +32,18 @@ FONTS = [
 
 
 def rgba(text):
-    text = text.lstrip("#")
-    return tuple(int(text[i : i + 2], 16) for i in (0, 2, 4)) + (255,)
+    """#rgb, #rgba, #rrggbb or #rrggbbaa -> (r, g, b, a)."""
+    h = text.strip().lstrip("#")
+    if len(h) in (3, 4):
+        h = "".join(c * 2 for c in h)
+    if len(h) == 6:
+        h += "ff"
+    try:
+        if len(h) != 8:
+            raise ValueError
+        return tuple(int(h[i : i + 2], 16) for i in (0, 2, 4, 6))
+    except ValueError:
+        sys.exit(f"bad colour {text!r}: use #rgb, #rrggbb or #rrggbbaa")
 
 
 def cover_fit(image, width, height):

@@ -50,7 +50,8 @@ if [[ -f "$root/package.json" ]]; then
     const raw = fs.readFileSync(f, "utf8"); const pkg = JSON.parse(raw);
     pkg.scripts ??= {};
     if (pkg.scripts["build:" + n]) { console.log("kept     package.json (build:" + n + ")"); process.exit(0); }
-    pkg.scripts["build:" + n] = "VITE_PLATFORM=" + n + " vite build --outDir dist-" + n + " --emptyOutDir";
+    // --mode, not a VITE_PLATFORM=... prefix: npm runs scripts in cmd.exe on Windows, which has no such syntax.
+    pkg.scripts["build:" + n] = "vite build --mode " + n + " --outDir dist-" + n + " --emptyOutDir";
     fs.writeFileSync(f, JSON.stringify(pkg, null, 2) + (raw.endsWith("\n") ? "\n" : ""));
     console.log("updated  package.json (build:" + n + ")");
   ' "$root/package.json"

@@ -7,7 +7,7 @@ const READY = '!!window.__game';
 const count = (name) => `window.__sdk.calls.filter((c) => c === ${JSON.stringify(name)}).length`;
 
 await suite('sdk', { inject: [FAKE_SDK] }, async ({ page, ok, url, noErrors }) => {
-  ok('game boots with the fake SDK', await page.goto(url, { ready: READY, timeout: 60000 }));
+  ok('game boots with the fake SDK', await page.goto(`${url}?debug`, { ready: READY, timeout: 60000 }));
   ok('loadingStart sent', await page.until(`${count('loadingStart')} >= 1`, 10000));
   ok('loadingStop sent when the first screen is ready', await page.until(`${count('loadingStop')} >= 1`, 20000));
   ok('no gameplayStart before the player starts', (await page.ev(count('gameplayStart'))) === 0);

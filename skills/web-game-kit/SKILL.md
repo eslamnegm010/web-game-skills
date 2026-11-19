@@ -5,28 +5,28 @@ description: The entry point for building and shipping a browser game (three.js,
 
 # Web game kit
 
-One command prepares a Vite game project; after that each task has its own skill.
+One command prepares a Vite game project; after that each task has its own skill. The skills of this set sit next to each other, so this skill's sibling folders hold the others.
 
 ```sh
-~/.claude/skills/web-game-kit/init-game.sh "Game Name" gamename_
+bash "${CLAUDE_SKILL_DIR}/init-game.sh" "Game Name" gamename_ [--portals "crazygames y8"] [--skip platform,tests,store]
 ```
 
-It runs each skill's own `init.sh` (none overwrites an existing file):
+Run it from the project root (a git repository: `git init` is enough). It runs each skill's own `init.sh`, and none overwrites an existing file:
 
 | Step | Creates | Skill |
 | --- | --- | --- |
-| Platform layer | `src/platform/` (web + CrazyGames), `build:crazygames` | `web-game-portals` |
+| Platform layer | `src/platform/` (web + the portals named, CrazyGames by default), `build:<portal>` scripts | `web-game-portals` |
 | Browser tests | `tools/e2e/` smoke, devices and fake-SDK suites | `web-game-qa` |
 | Store kit | `docs/store/` listing, submission log, folders | `web-game-store-assets` |
 
-Skip steps with `--skip platform,tests,store`. A step whose skill is not installed is skipped with a note.
+A step whose skill is not installed is skipped with a note: install the whole bundle, not this skill alone.
 
 ## After the command (the part that needs judgment)
 
-1. **Adapt, don't just scaffold.** Write the project's `AGENTS.md` with its rules and its quality gate with real commands. Add the browser suites and the platform grep to that gate.
-2. **Wire the platform layer** into the game (`web-game-portals` → "Wire the game"): `vite.config.js`, boot signals, storage, ad hooks.
-3. **Make the game drivable:** expose `window.__game` behind `?debug`, then set `READY` and fill the `TODO` steps in `tools/e2e/*.e2e.mjs`.
-4. Run `~/.claude/skills/web-game-qa/run.sh` and look at the screenshots.
+1. **Wire the platform layer** into the game (`web-game-portals` → "Wire the game"): `vite.config.js`, boot signals, storage, ad hooks.
+2. **Make the game drivable:** expose `window.__game` behind `?debug`, then set `READY` and fill the `TODO` steps in `tools/e2e/*.e2e.mjs`.
+3. **Give the project one check command** (for example `npm run check`) that builds, runs `${CLAUDE_SKILL_DIR}/../web-game-qa/run.sh` and the platform grep from `web-game-portals`. Write that command and the project's rules into its `CLAUDE.md` (or `AGENTS.md`), so every later change is checked the same way.
+4. Run the suites and open the screenshots.
 5. Commit.
 
 ## Which skill for what

@@ -18,7 +18,7 @@ for p in "${portals[@]}"; do bash "$skill_dir/add-platform.sh" "$p"; done # via 
 cat <<EOF
 
 Next (see SKILL.md "Wire the game"):
-  1. vite.config.js: base "./", plugins: [platformHtml()], build: { ...platformBuild() } from ./${dest#"$root"/}/vite.js
+  1. vite.config.js: base "./", plugins: [platformHtml()] from ./${dest#"$root"/}/vite.js
   2. Boot: await platform.init(); platform.loadingStart(); ... platform.loadingStop() when the first screen is ready.
   3. Replace every localStorage call in game code with platform.storage.
   4. gameplayStart/Stop around real play; pause and mute in platform.onAdStart / onAdEnd.

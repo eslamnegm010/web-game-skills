@@ -1,9 +1,12 @@
 // Build-time side of the platform layer. In vite.config.js:
-//   import { platformHtml, platformBuild } from "./src/platform/vite.js";
-//   export default defineConfig({ base: "./", plugins: [platformHtml()], build: { ...platformBuild() } });
+//   import { platformHtml } from "./src/platform/vite.js";
+//   export default defineConfig({ base: "./", plugins: [platformHtml()] });
+// The portal is the build's mode: `vite build --mode crazygames` (what add-platform.sh writes into
+// package.json; it works in every shell, cmd.exe included). VITE_PLATFORM=<portal> still overrides it.
 import { PLATFORM_CONFIG } from "./config.js";
 
-const target = process.env.VITE_PLATFORM ?? "";
+/** Vite's own modes: they mean "no portal" (the plain web build). */
+const PLAIN_MODES = new Set(["", "production", "development", "test"]);
 
 /** What each portal needs in <head> before the game's own script. Portals that load their SDK at run time
  *  (CrazyGames) need nothing here. add-platform.sh adds an empty entry for a new portal. */
@@ -33,11 +36,27 @@ const PLAYGAMA_BRIDGE_CONFIG = {
   advertisement: { minimumDelayBetweenInterstitial: 60 },
 };
 
-/** Injects the portal's SDK tags first in <head>, and drops tags that load from other domains when the
- *  portal forbids them (fonts from a CDN, for example: bundle them instead). */
+/** The portal this build is for: VITE_PLATFORM if set, else the mode unless it is one of Vite's own. */
+export function platformTarget(mode = "") {
+  const env = process.env.VITE_PLATFORM;
+  if (env !== undefined && env !== "") return env;
+  return PLAIN_MODES.has(mode) ? "" : mode;
+}
+
+/** Picks the portal from the mode, defines import.meta.env.VITE_PLATFORM for src/platform/index.js, turns
+ *  source maps off for portal builds, injects the portal's SDK tags first in <head>, and drops tags that load
+ *  from other domains when the portal forbids them (fonts from a CDN, for example: bundle them instead). */
 export function platformHtml() {
+  let target = platformTarget();
   return {
     name: "platform-html",
+    config(_config, { mode }) {
+      target = platformTarget(mode);
+      return {
+        define: { "import.meta.env.VITE_PLATFORM": JSON.stringify(target) },
+        build: { sourcemap: target === "" },
+      };
+    },
     // Playgama only: the bridge refuses a build whose config file is missing next to index.html.
     generateBundle() {
       if (target !== "playgama") return;
@@ -61,7 +80,7 @@ export function platformHtml() {
   };
 }
 
-/** Portal builds ship without source maps. */
+/** Kept for projects set up before the plugin handled the build options: platformHtml() now does this. */
 export function platformBuild() {
-  return { sourcemap: target === "" };
+  return {};
 }

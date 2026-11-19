@@ -5,12 +5,12 @@ description: Take screenshots of a browser game (three.js, canvas, any HTML5 gam
 
 # Web game capture
 
-Screenshots and browser control for web games, with no dependencies (Node 22+, Chrome installed). Scripts run from this folder; nothing is copied into the project.
+Screenshots and browser control for web games, with no dependencies (Node 22+, and Chrome, Chromium or Edge installed). Scripts run from this skill's folder; nothing is copied into the project.
 
 | File | Role |
 | --- | --- |
 | `shot.mjs` | One screenshot, or a batch from a JSON file. |
-| `with-preview.sh` | Builds the game, serves the build on a free port, runs a command with `URL` set, stops the server. |
+| `with-preview.sh` | Builds the game, serves the build on a free port, runs a command with `URL` (and `WEB_GAME_CAPTURE`, the driver's URL) set, stops the server. |
 | `lib/browser.mjs` | The driver: `launch()`, `goto`, `ev`, `until`, `shot`, `device`, `tap`, `click`, `key`, `inject`. |
 
 ## Take a screenshot
@@ -18,14 +18,14 @@ Screenshots and browser control for web games, with no dependencies (Node 22+, C
 From the project root (a Vite project):
 
 ```sh
-C=~/.claude/skills/web-game-capture
-$C/with-preview.sh -- node $C/shot.mjs / out.png --wait '!!window.__game'
-$C/with-preview.sh -- node $C/shot.mjs '?debug' phone.png --device iphone --landscape --wait '!!window.__game'
+C="${CLAUDE_SKILL_DIR}"
+bash "$C/with-preview.sh" -- node "$C/shot.mjs" '?debug' out.png --wait '!!window.__game'
+bash "$C/with-preview.sh" -- node "$C/shot.mjs" '?debug' phone.png --device iphone --landscape --wait '!!window.__game'
 ```
 
 `with-preview.sh` builds the game, serves it and sets `URL`; a relative address (`/`, `?debug`) is resolved against it.
 
-Against a server that is already running: `node $C/shot.mjs http://localhost:5173/ out.png`.
+Against a server that is already running: `node "$C/shot.mjs" http://localhost:5173/?debug out.png`.
 
 Options: `--size 1920x1080` · `--device iphone|android|ipad|chromebook|desktop` · `--landscape` · `--wait "<js expression>"` · `--eval "<js>"` (runs after the wait: open a menu, start a level, hide the HUD) · `--delay <ms>` · `--gpu` (real GPU: sharper, use it for store stills) · `--batch shots.json --out <dir> --base <url>`.
 
@@ -41,7 +41,7 @@ A batch file is a JSON array of `{ "name", "url", "size", "device", "landscape",
 
 ## Rules that came from real failures
 
-- **Chrome is always muted and always killed.** `launch()` passes `--mute-audio` and kills Chrome when the script exits, crashes or is interrupted. Never start Chrome another way for a test: the owner hears leftover sound.
+- **Chrome is always muted and always killed.** `launch()` passes `--mute-audio` and kills Chrome when the script exits, crashes or is interrupted. Never start Chrome another way for a test: the user hears leftover sound, and stray browsers pile up.
 - **Wait on a condition, never on a fixed sleep.** Headless Chrome with the software renderer can run a 3D game at 1-5 fps. `page.until(expr, ms)` polls.
 - **Use the built game, not the dev server**: hot reload restarts the page in the middle of a run. `with-preview.sh` does this.
 - **Software renderer by default** (same pixels on every machine, works without a GPU); `--gpu` when the picture itself is the product.
@@ -50,8 +50,11 @@ A batch file is a JSON array of `{ "name", "url", "size", "device", "landscape",
 
 ## Using the driver in your own script
 
+Run the script through `with-preview.sh`: it sets `WEB_GAME_CAPTURE` to the driver as a `file://` URL, which imports on every OS (a bare Windows path such as `C:\...` is not a valid ESM import).
+
 ```js
-import { launch } from '/Users/<you>/.claude/skills/web-game-capture/lib/browser.mjs';
+const { launch } = await import(process.env.WEB_GAME_CAPTURE);
+const url = `${process.env.URL}?debug`;
 const page = await launch({ width: 1280, height: 720 });
 await page.goto(url, { ready: '!!window.__game' });
 await page.ev(`(() => { __game.startLevel(2); })()`);

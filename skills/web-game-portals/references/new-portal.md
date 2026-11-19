@@ -4,9 +4,9 @@ Do the research before the code. A portal integration built from memory or from 
 
 ## 1. Research (official sources only)
 
-Search for the portal's developer documentation and read the live pages: developer or partner portal, SDK reference, technical requirements, ad or monetisation policy, asset guidelines, submission guide. Prefer the portal's own docs over blog posts; note the URL and the date for every fact. If a page needs a login, ask the owner to open it or paste it. When two sources disagree, the SDK reference wins over marketing pages; when something is not documented, write "unknown" and ask the portal's support rather than guessing.
+Search for the portal's developer documentation and read the live pages: developer or partner portal, SDK reference, technical requirements, ad or monetisation policy, asset guidelines, submission guide. Prefer the portal's own docs over blog posts; note the URL and the date for every fact. If a page needs a login, ask the user to open it or paste it. When two sources disagree, the SDK reference wins over marketing pages; when something is not documented, write "unknown" and ask the portal's support rather than guessing.
 
-Answer every question in this profile, then save it as `references/<portal>.md` in this skill's repo:
+Answer every question in this profile, then save it in the project as `docs/portals/<portal>.md` (the installed skill is shared: keep project knowledge in the project):
 
 ```markdown
 # <Portal>
@@ -44,23 +44,23 @@ Upload format (zip, folder, URL), form fields, QA or preview tool, review proces
 What the docs did not answer.
 ```
 
-## 2. Decide with the owner
+## 2. Decide with the user
 
-Tell the owner, before writing code: what the portal requires that the game does not do yet, anything that conflicts with another portal (exclusivity, ad rules), and what could not be found. Exclusivity and payout terms are the owner's decision.
+Tell the user, before writing code: what the portal requires that the game does not do yet, anything that conflicts with another portal (exclusivity, ad rules), and what could not be found. Exclusivity and payout terms are the user's decision.
 
 ## 3. Integrate
 
-1. `~/.claude/skills/web-game-portals/add-platform.sh <portal> <SdkGlobal>` creates `src/platform/<portal>.js` from the skeleton, registers it in `index.js`, adds `build:<portal>` and an empty `<head>` entry in `vite.js`.
+1. `bash "${CLAUDE_SKILL_DIR}/add-platform.sh" <portal> <SdkGlobal>` creates `src/platform/<portal>.js` from the skeleton, registers it in `index.js`, adds `build:<portal>` and an empty `<head>` entry in `vite.js`.
 2. Fill the adapter from the profile. The rules in the skeleton's header are not optional: `init()` never throws and times out; every SDK call is guarded; `hooks.adStart()` only when an ad is really shown and `hooks.adEnd()` exactly once; `rewardedAd()` true only on the SDK's own "granted" signal. Leave out what the portal does not have: the web platform answers.
 3. If the portal wants tags in `<head>`, fill its entry in `src/platform/vite.js`; delete the entry if it wants none.
 4. Portal-specific needs that are not SDK calls (no external fonts, no rotate prompt, a different first screen) go behind `platform.name === '<portal>'` checks or build-time `import.meta.env.VITE_PLATFORM`, never in shared game logic by default.
 
 ## 4. Test
 
-1. Write `fakes/<portal>-sdk.js` in the `web-game-qa` skill from the SDK reference: the same global and method shapes, every call recorded in `window.__sdk.calls`, a switch for failed ads.
+1. Write `tools/e2e/fakes/<portal>-sdk.js` in the project from the SDK reference: the same global and method shapes, every call recorded in `window.__sdk.calls`, a switch for failed ads.
 2. Copy the CrazyGames SDK suite to `tools/e2e/sdk.<portal>.e2e.mjs` and adapt the checks to this portal's signals.
 3. `npm run build:<portal>`, run the suite, then test in the portal's own preview or sandbox tool. A fake SDK proves the game's side only.
 
 ## 5. Record
 
-After the real submission, set "Verified by a real submission: yes (date)" in the reference, add what the form and the reviewers actually asked, move the adapter into `templates/platform/<portal>.js` and the fake SDK into `web-game-qa/fakes/`, and commit. The next game then gets this portal with one command.
+After the real submission, set "Verified by a real submission: yes (date)" in the project's reference and add what the form and the reviewers actually asked. To make the portal a one-command install for every game, contribute the reference, the adapter (`templates/platform/<portal>.js`) and the fake SDK (`web-game-qa/fakes/`) upstream as a pull request to this skill set.

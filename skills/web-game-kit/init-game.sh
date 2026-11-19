@@ -10,7 +10,7 @@ shift 2
 skip=""; portals="crazygames"
 while [[ $# -gt 0 ]]; do case "$1" in
   --skip) skip=",$2,"; shift 2 ;; --portals) portals="$2"; shift 2 ;; *) echo "unknown option $1" >&2; exit 2 ;; esac; done
-git rev-parse --show-toplevel >/dev/null 2>&1 || { echo "not a git repo: git init and make a first commit" >&2; exit 2; }
+git rev-parse --show-toplevel >/dev/null 2>&1 || { echo "not a git repository: run git init in the project root first" >&2; exit 2; }
 
 step() { # step <key> <title> <skill> <script> [args...]
   local key="$1" title="$2" skill="$3" script="$4"; shift 4
@@ -24,4 +24,4 @@ step platform "Platform layer" web-game-portals init.sh "$prefix" $portals
 step tests "Browser tests" web-game-qa init.sh --sdk
 step store "Store kit" web-game-store-assets init.sh "$game"
 echo
-echo "Done. Next: SKILL.md \"After the command\" (write AGENTS.md and the gate, wire the platform layer, fill the suites)."
+echo "Done. Next: web-game-kit SKILL.md \"After the command\" (wire the platform layer, fill the suites, add a check command)."

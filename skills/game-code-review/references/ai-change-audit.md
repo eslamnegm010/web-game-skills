@@ -135,8 +135,7 @@ secret scan to CI.
 
 ## A8. Engine-generated files
 
-GameForge's hooks block agents from editing these by hand, but MCP tools and editors still change
-them. Check the diff for:
+Agents, MCP tools and editors all change these files. Check the diff for:
 
 | Engine | Should be committed | Should never be committed or hand-edited |
 |---|---|---|
