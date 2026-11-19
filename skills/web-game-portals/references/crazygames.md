@@ -6,7 +6,7 @@ Official: https://docs.crazygames.com/ (requirements: `/requirements/intro/`, ad
 
 1. **Submit as Basic Launch**: free, open to everyone, no exclusivity. Manual review, a few days to about two weeks, answer by email. **Do not press "Submit new version" while a version is under review.**
 2. **Basic Launch** is a test period: 7 days and 500 plays, 21 days at most. **No ads and no money.** Updates in this phase are accepted automatically.
-3. CrazyGames scores **conversion** (players who stay at least 1 minute), **average playtime** and **day-1 retention**, separately for **desktop and mobile**, as gauges with steps. In one observed run, passing took 9 of 15 points per device.
+3. CrazyGames scores **conversion** (players who stay at least 1 minute), **average playtime** and **day-1 retention**, separately for **desktop and mobile**, as gauges with steps; the dashboard shows how many points a device needs to pass.
 4. Picked → **Full Launch**: full SDK and QA, ads on, revenue share. Not picked: improve and ask for another Basic Launch if offered; with most numbers low it can only return as a new game with large changes.
 5. Money: monthly through Tipalti once earnings reach 100 EUR. The revenue share is not published. An optional two-month web exclusivity raises it.
 
@@ -71,7 +71,7 @@ Multiplayer games in Basic Launch must also: show the CrazyGames username in-gam
 - Go straight into play when the first screen appears (load time runs until the first gameplay start).
 - Press the speaker button under the game: the game must go silent.
 - Multiplayer: open a room, copy the invite link, then in "Invite parameters simulation" enter `{"room":"ABCD"}` and press "Call join listener"; try Instant Multiplayer from QA Settings with Relaunch, then turn it off again.
-- **Relaunch does not re-measure load time; a browser refresh (Cmd+R) does.**
+- **Relaunch does not re-measure load time; a browser refresh (Cmd+R / Ctrl+R) does.**
 - A new build during QA: Continue → Cancel on the QA Results page → Delete all files → upload again.
 - Self-answered questions: first gameplay start correct, gameplay requirements, runs on all CrazyGames domains, browsers, mobile (scan the QR code with a phone first), no external ads, no external login, Terms/Privacy N/A unless you collect data.
 
@@ -92,7 +92,7 @@ Multiplayer games in Basic Launch must also: show the CrazyGames username in-gam
 
 ## Payouts
 
-Billing → Manage Payment Details opens Tipalti: phone check → address → payment method → tax forms. Not needed for review. A bank wire is possible; Tipalti's wire fee was about 25 USD per payment, plus intermediary bank fees. The address must match the bank statement. **Confirm with the bank before typing anything:** the account's currency, the exact spelling of the name in Latin letters, the SWIFT code (head office or branch), incoming fees, and any papers the bank wants.
+Billing → Manage Payment Details opens Tipalti: phone check → address → payment method → tax forms. Not needed for review. A bank wire is possible; check Tipalti's current fee per payment and the intermediary bank fees before choosing it. The address must match the bank statement. **The user confirms with the bank before typing anything:** the account's currency, the exact spelling of the name in Latin letters, the SWIFT code (head office or branch), incoming fees, and any papers the bank wants.
 
 ## Promotion
 

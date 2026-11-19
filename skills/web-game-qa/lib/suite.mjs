@@ -1,7 +1,7 @@
 // One browser suite: opens the game, gives you checks, prints PASS/FAIL lines, always closes Chrome.
 //   const { suite } = await import(process.env.WEB_GAME_QA);
 //   await suite('smoke', {}, async ({ page, ok, info, shot, url }) => { ... });
-// run.sh sets URL (the served build), OUT (screenshot folder) and WEB_GAME_QA (this file).
+// run.sh sets URL (the served build), WEB_GAME_QA_OUT (screenshot folder) and WEB_GAME_QA (this file's URL).
 import fs from 'node:fs';
 import path from 'node:path';
 import { launch, sleep, DEVICES } from '../../web-game-capture/lib/browser.mjs';
@@ -19,7 +19,7 @@ export const fake = (name) => fs.readFileSync(new URL(`../fakes/${name}.js`, imp
  */
 export async function suite(name, options, body) {
   const url = process.env.URL ?? 'http://localhost:4173/';
-  const out = path.join(process.env.OUT ?? path.join(process.cwd(), '.e2e-out'), name);
+  const out = path.join(process.env.WEB_GAME_QA_OUT ?? process.env.OUT ?? path.join(process.cwd(), '.e2e-out'), name);
   const lines = [];
   let failed = 0;
   const ok = (label, condition, detail = '') => {

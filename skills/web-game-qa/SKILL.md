@@ -18,14 +18,14 @@ Suites live in the project (`tools/e2e/<name>.e2e.mjs`); the runner, the helpers
 ## Set up and run
 
 ```sh
-~/.claude/skills/web-game-qa/init.sh --sdk     # once per project
-~/.claude/skills/web-game-qa/run.sh            # every suite
-~/.claude/skills/web-game-qa/run.sh smoke sdk  # some
+bash "${CLAUDE_SKILL_DIR}/init.sh" --sdk     # once per project
+bash "${CLAUDE_SKILL_DIR}/run.sh"            # every suite
+bash "${CLAUDE_SKILL_DIR}/run.sh" smoke sdk  # some
 ```
 
 After `init.sh`, adapt each suite: set `READY` to the game's ready signal and fill the `TODO` steps with how a player starts a run in this game. A starter suite that only loads the page proves little.
 
-A file named `<name>.<portal>.e2e.mjs` runs against that portal's build (`npm run build:<portal>`, served from `dist-<portal>`). Screenshots go to `$OUT/<suite>/` (default `$TMPDIR/<repo>-e2e`): open them.
+A file named `<name>.<portal>.e2e.mjs` runs against that portal's build (`npm run build:<portal>`, served from `dist-<portal>`). Screenshots go to `$WEB_GAME_QA_OUT/<suite>/` (default `${TMPDIR:-/tmp}/<repo>-e2e`): open them. The runner empties that folder before each run, and refuses to empty one it did not make.
 
 ## Writing a suite
 
@@ -33,7 +33,7 @@ A file named `<name>.<portal>.e2e.mjs` runs against that portal's build (`npm ru
 const { suite } = await import(process.env.WEB_GAME_QA);
 
 await suite('weapons', {}, async ({ page, ok, shot, url, noErrors }) => {
-  ok('loads', await page.goto(`${url}?debug`, { ready: '!!window.__game' }));
+  ok('loads', await page.goto(`${url}?debug`, { ready: '!!window.__game' })); // the game shows itself behind ?debug
   await page.ev(`(() => { __game.start(); __game.player.equip('shotgun'); })()`);
   ok('shotgun equipped', await page.until(`__game.player.weapon.id === 'shotgun'`, 5000));
   await shot('shotgun');
@@ -50,17 +50,17 @@ await suite('weapons', {}, async ({ page, ok, shot, url, noErrors }) => {
 ## What to cover (in this order)
 
 1. **Smoke:** loads, canvas fills the window, a run starts, no errors.
-2. **Devices:** iPhone and Android in both orientations, a 1366x768 laptop. The game starts in any orientation (a "rotate your phone" wall once cut mobile conversion to 31 %), nothing is wider than the screen, the canvas follows a rotation. iPhone Safari has no fullscreen and no orientation lock: the template removes them to prove the game does not depend on them.
+2. **Devices:** iPhone and Android in both orientations, a 1366x768 laptop. The game starts in any orientation (a "rotate your phone" wall costs a large share of mobile players), nothing is wider than the screen, the canvas follows a rotation. iPhone Safari has no fullscreen and no orientation lock: the template removes them to prove the game does not depend on them.
 3. **Portal SDK** (before any upload): with the fake SDK, `loadingStart`/`loadingStop` are sent, `gameplayStart` once per play session, an ad pauses and mutes the game and gives it back, an unfilled rewarded ad gives no reward, the site's mute button silences the game, saves go through the SDK.
 4. **The game's own rules:** one suite per system that has broken before.
 
 ## The fake SDK
 
-`inject: [fake('crazygames-sdk')]` loads it before the game. Then in the page: `__sdk.calls` (names in order), `__sdk.adMode = 'error'` (next ads fail as unfilled), `__sdk.data` (the Data module's Map), `__sdk.settingsListener({ muteAudio: true })`, `__sdk.joinListener({ room: 'ABCD' })`. For another portal, write `fakes/<portal>-sdk.js` the same way from that portal's SDK docs (see the `web-game-portals` skill) and add it to this repo.
+`inject: [fake('crazygames-sdk')]` loads it before the game. Then in the page: `__sdk.calls` (names in order), `__sdk.adMode = 'error'` (next ads fail as unfilled), `__sdk.data` (the Data module's Map), `__sdk.settingsListener({ muteAudio: true })`, `__sdk.joinListener({ room: 'ABCD' })`. For another portal, write a fake the same way from that portal's SDK docs (see the `web-game-portals` skill) and keep it in the project (`tools/e2e/fakes/<portal>-sdk.js`, injected with `fs.readFileSync`). A fake that works for every game is worth contributing to this skill set upstream, as a pull request.
 
 ## Gotchas
 
 - Slow machines make timing checks flaky: re-run a failing timing check before blaming the change, and prefer state checks.
-- Two runs side by side need different `OUT` folders.
+- Two runs side by side need different `WEB_GAME_QA_OUT` folders. Each run only ever closes its own browsers.
 - Don't park a test player on something that moves or teleports.
 - `tools/e2e/*.e2e.mjs` files are test code: keep them out of the shipped bundle (they are, unless imported from `src/`).

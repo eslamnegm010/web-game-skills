@@ -13,4 +13,4 @@ for n in "${names[@]}"; do
 done
 echo
 echo "Next: set READY in each suite to this game's ready signal, fill the TODO steps, then run:"
-echo "  ~/.claude/skills/web-game-qa/run.sh"
+echo "  bash \"$skill_dir/run.sh\""

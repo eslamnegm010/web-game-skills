@@ -80,12 +80,13 @@ export default function createCrazyGamesPlatform(hooks = {}, deps = {}) {
   const requestAd = (type) =>
     new Promise((resolve) => {
       let settled = false;
+      let started = false;
       let waiting = 0;
       const end = (ok) => {
         if (settled) return;
         settled = true;
         clearTimeout(waiting);
-        hooks.adEnd?.();
+        if (started) hooks.adEnd?.(); // adEnd pairs with adStart: a request that never showed resumes nothing
         resolve(ok);
       };
       if (!api.canShowAds) return resolve(false);
@@ -93,6 +94,10 @@ export default function createCrazyGamesPlatform(hooks = {}, deps = {}) {
       try {
         sdk.ad.requestAd(type, {
           adStarted: () => {
+            // An ad that starts after this request gave up is not paused for: pausing now would never be
+            // undone, because adEnd only fires for an open request (the game would stay frozen and muted).
+            if (settled || started) return;
+            started = true;
             clearTimeout(waiting);
             hooks.adStart?.(); // pause and mute only now: a request that never fills must not silence the game
           },

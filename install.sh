@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Installs skills from this repository into Claude Code (~/.claude/skills) as symlinks, so `git pull` updates them.
 #   install.sh                     list bundles and skills, and what is installed
-#   install.sh games               install a bundle
+#   install.sh web-game            install a bundle
 #   install.sh web-game-qa ...     install skills (what they require comes along)
 #   install.sh --all               install everything
 #   install.sh --remove <name...>  remove skills installed from here

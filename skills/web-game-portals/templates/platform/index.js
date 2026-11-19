@@ -1,9 +1,14 @@
 import { createWebPlatform } from "./web.js";
+import { PLATFORM_CONFIG } from "./config.js";
+
+/** The longest a portal may hold up the boot. Each adapter also gives up on its own, sooner. */
+const INIT_TIMEOUT = PLATFORM_CONFIG.initTimeout ?? 12000;
 
 /**
  * The only door between the game and the site it runs on (ads, saves, lifecycle signals, accounts).
  * Game code imports `platform` from here and never touches localStorage or a portal SDK directly.
- * The portal is chosen at build time by VITE_PLATFORM; every other adapter is dropped from the bundle.
+ * The portal is chosen at build time (`vite build --mode <portal>`, which platformHtml() in vite.js turns into
+ * import.meta.env.VITE_PLATFORM); every other adapter is dropped from the bundle.
  */
 const adStartFns = new Set();
 const adEndFns = new Set();
@@ -13,7 +18,7 @@ const hooks = {
 };
 
 async function loadAdapter() {
-  const target = import.meta.env.VITE_PLATFORM;
+  const target = import.meta.env?.VITE_PLATFORM;
   // One line per portal, added by add-platform.sh. Keep the literal comparisons: the bundler removes the rest.
   // @platform-adapters
   return null;
@@ -35,14 +40,23 @@ export const platform = {
     return impl.storage ?? web.storage;
   },
 
-  /** Never throws. Falls back to the web platform when the SDK is missing, blocked or slow. */
+  /** Never throws. Falls back to the web platform when the SDK is missing, blocked or slow
+   *  (PLATFORM_CONFIG.initTimeout, 12 s by default; the adapters give up sooner on their own). */
   async init() {
+    let timer = 0;
     try {
       const create = await loadAdapter();
       const candidate = create?.(hooks);
-      if (candidate && (await candidate.init())) impl = candidate;
+      if (!candidate) return true;
+      const ready = await Promise.race([
+        Promise.resolve(candidate.init()).catch(() => false),
+        new Promise((resolve) => (timer = setTimeout(() => resolve(false), INIT_TIMEOUT))),
+      ]);
+      if (ready) impl = candidate;
     } catch {
       // stay on the web platform
+    } finally {
+      clearTimeout(timer);
     }
     return true;
   },

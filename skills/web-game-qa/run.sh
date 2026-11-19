@@ -4,20 +4,32 @@
 #   run.sh smoke devices   only those
 # A suite is a file tools/e2e/<name>.e2e.mjs. A file named <name>.<platform>.e2e.mjs runs against that
 # platform's build (`npm run build:<platform>`, served from dist-<platform>).
-# Screenshots: $OUT/<suite>/ (default: $TMPDIR/<repo>-e2e). Exit code 1 when any check fails.
+# Screenshots: $WEB_GAME_QA_OUT/<suite>/ (default: ${TMPDIR:-/tmp}/<repo>-e2e). Exit code 1 when any check fails.
 set -uo pipefail
 skill_dir="$(cd "$(dirname "$0")" && pwd)"
 root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$root"
 E2E_DIR="${E2E_DIR:-tools/e2e}"
-export OUT="${OUT:-${TMPDIR:-/tmp}/$(basename "$root")-e2e}"
-export WEB_GAME_QA="$skill_dir/lib/suite.mjs"
+out="${WEB_GAME_QA_OUT:-${OUT:-${TMPDIR:-/tmp}/$(basename "$root")-e2e}}"
 preview="$skill_dir/../web-game-capture/with-preview.sh"
 [[ -f "$preview" ]] || { echo "web-game-capture skill is missing next to web-game-qa" >&2; exit 2; }
 shopt -s nullglob
 files=("$E2E_DIR"/*.e2e.mjs)
 [[ ${#files[@]} -gt 0 ]] || { echo "no suites in $E2E_DIR (run init.sh to add the starter suites)" >&2; exit 2; }
-rm -rf "$OUT"; mkdir -p "$OUT"
+
+# The screenshot folder is emptied before a run, so only ever empty a folder this runner made: a marker file
+# says so. A folder someone pointed the variable at by mistake (their build output, say) is never touched.
+marker=".web-game-qa-out"
+if [[ -d "$out" && -n "$(ls -A "$out" 2>/dev/null)" && ! -f "$out/$marker" ]]; then
+  echo "refusing to empty $out: it was not made by web-game-qa (set WEB_GAME_QA_OUT to a new folder)" >&2; exit 2
+fi
+rm -rf "$out"; mkdir -p "$out"; : >"$out/$marker"
+# The suites import the helpers by URL: a file:// URL is valid on every OS, a bare C:\ path is not.
+WEB_GAME_QA="$(node -p 'require("url").pathToFileURL(process.argv[1]).href' "$skill_dir/lib/suite.mjs")"
+# Every Chrome of this run carries this tag in its profile folder name, so a crashed suite's leftover browser
+# can be cleaned up without touching any other Chrome (another run, a trailer being filmed).
+WEB_GAME_CHROME_TAG="qa$$"
+export WEB_GAME_QA WEB_GAME_QA_OUT="$out" OUT="$out" WEB_GAME_CHROME_TAG
 
 wanted() { [[ $# -eq 1 ]] && return 0; local n="$1"; shift; for w in "$@"; do [[ "$w" == "$n" ]] && return 0; done; return 1; }
 platform_of() { local b; b="$(basename "$1" .e2e.mjs)"; [[ "$b" == *.* ]] && echo "${b##*.}" || echo ""; }
@@ -52,7 +64,8 @@ for tagged in "${platforms[@]}"; do
   ran=$((ran + ${#group[@]}))
   rm -f "$runner" "$log"
 done
-command -v pkill >/dev/null && pkill -f "web-game-chrome-" 2>/dev/null || true # no pkill on Windows: browser.mjs kills its own Chrome tree there
+# Only this run's browsers (no pkill on Windows: browser.mjs kills its own Chrome tree there).
+command -v pkill >/dev/null && pkill -f "web-game-chrome-$WEB_GAME_CHROME_TAG-" 2>/dev/null || true
 echo
-echo "$ran suites · $total_pass passed · $total_fail failed · screenshots: $OUT"
+echo "$ran suites · $total_pass passed · $total_fail failed · screenshots: $out"
 [[ $ran -gt 0 && $total_fail -eq 0 && $total_pass -gt 0 ]]

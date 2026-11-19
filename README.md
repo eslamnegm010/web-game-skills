@@ -15,6 +15,8 @@
   <img src="https://img.shields.io/badge/portals-CrazyGames%20%C2%B7%20Y8%20%C2%B7%20GamePix%20%C2%B7%20Playgama%20%C2%B7%20any-7c3aed" alt="Portals: CrazyGames, Y8, GamePix, Playgama, any">
   <img src="https://img.shields.io/badge/skills-7-0ea5e9" alt="7 skills">
   <img src="https://img.shields.io/badge/platforms-macOS%20%C2%B7%20Linux%20%C2%B7%20Windows-555555" alt="macOS, Linux, Windows">
+  <a href="https://github.com/eslamnegm010/web-game-skills/actions/workflows/ci.yml"><img src="https://github.com/eslamnegm010/web-game-skills/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license">
 </p>
 
 <p align="center">
@@ -27,20 +29,20 @@ Shipping a browser game is not one job, it is six: scaffolding the project, scre
 
 ```sh
 # 1. Get the toolkit and install it into Claude Code
-gh repo clone eslamnegm010/web-game-skills ~/.web-game-skills
-~/.web-game-skills/install.sh web-game
+git clone https://github.com/eslamnegm010/web-game-skills.git ~/.web-game-skills
+bash ~/.web-game-skills/install.sh web-game
 
-# 2. Scaffold a game project (from the project's root)
-~/.claude/skills/web-game-kit/init-game.sh "My Game" mygame_
+# 2. Scaffold a game project (from the project's root, a git repository)
+bash ~/.claude/skills/web-game-kit/init-game.sh "My Game" mygame_
 
 # 3. Run the starter browser tests
-~/.claude/skills/web-game-qa/run.sh
+bash ~/.claude/skills/web-game-qa/run.sh
 ```
 
-Step 2 adds the platform layer (`src/platform/`), starter test suites (`tools/e2e/`) and the store kit (`docs/store/`) — nothing is ever overwritten. Step 3 builds the game, serves it, and drives muted headless Chrome through the suites; a green run ends like this:
+Step 2 adds the platform layer (`src/platform/`), starter test suites (`tools/e2e/`) and the store kit (`docs/store/`) — nothing is ever overwritten. Step 3 builds the game, serves it, and drives muted headless Chrome through the suites. Your game needs `window.__game` behind `?debug` and the `TODO` steps filled for the suites to mean something; to see a green run first, try [`examples/minimal-game`](examples/minimal-game), which ends like this:
 
 ```
-3 suites · 25 passed · 0 failed · screenshots: /tmp/mygame-e2e
+3 suites · 25 passed · 0 failed · screenshots: /tmp/minimal-game-e2e
 ```
 
 Start a new Claude Code session after installing, then just ask for the work — *"take a phone screenshot"*, *"film the preview videos"*, *"package it for CrazyGames"* — each skill triggers on its task.
@@ -99,11 +101,11 @@ Runs each skill's own setup for the project (platform layer, starter suites, sto
 Drives muted headless Chrome over the DevTools protocol — no dependencies beyond Node. Devices are built in: `iphone`, `android`, `ipad`, `chromebook`, `desktop`.
 
 ```sh
-with-preview.sh -- node shot.mjs / out.png --wait '!!window.__game'
+with-preview.sh -- node shot.mjs '?debug' out.png --wait '!!window.__game'
 with-preview.sh -- node shot.mjs '?debug' phone.png --device iphone --landscape --wait '!!window.__game'
 ```
 
-`with-preview.sh` builds the game (never the dev server — hot reload restarts pages mid-run), serves the build on a free port, runs your command with `URL` set, and stops the server. `lib/browser.mjs` is the shared driver the QA and trailer skills are built on: it waits on conditions, never on fixed sleeps, and always kills its Chrome.
+`with-preview.sh` builds the game (never the dev server — hot reload restarts pages mid-run), serves the build on a free port, runs your command with `URL` (and `WEB_GAME_CAPTURE`, the driver's `file://` URL) set, and stops the server. `lib/browser.mjs` is the shared driver the QA and trailer skills are built on: it waits on conditions, never on fixed sleeps, and always kills its Chrome.
 
 ### web-game-qa — browser test suites
 
@@ -112,7 +114,7 @@ run.sh                 # every suite in tools/e2e/
 run.sh smoke devices   # only those
 ```
 
-A suite is a file `tools/e2e/<name>.e2e.mjs`; a file named `<name>.<portal>.e2e.mjs` runs against that portal's build. The starter suites cover boot/smoke, device viewports, and portal SDK integration — the CrazyGames one runs against a **fake SDK** shipped here, so SDK calls are tested without the real portal. Exit code 1 when any check fails; screenshots land in `$OUT/<suite>/`.
+A suite is a file `tools/e2e/<name>.e2e.mjs`; a file named `<name>.<portal>.e2e.mjs` runs against that portal's build. The starter suites cover boot/smoke, device viewports, and portal SDK integration — the CrazyGames one runs against a **fake SDK** shipped here, so SDK calls are tested without the real portal. Exit code 1 when any check fails; screenshots land in `$WEB_GAME_QA_OUT/<suite>/` (a temp folder by default; the runner only ever empties a folder it made).
 
 ### web-game-trailer — trailers and preview videos
 
@@ -128,7 +130,7 @@ cut.sh sheet   <frames dir> <out.jpg>     # a contact sheet, to judge a take at 
 ### web-game-store-assets — covers, packages, checks
 
 ```sh
-title-cover.py --title "MY|GAME" --art <dir> --out <dir>   # 1920x1080, 800x1200, 800x800 covers
+title-cover.sh --title "MY|GAME" --art <dir> --out <dir>   # 1920x1080, 800x1200, 800x800 covers
 package.sh crazygames        # -> release/<name>-crazygames/ and .zip, sizes checked against portal limits
 check-assets.sh docs/store   # covers and preview videos against the portal's rules, PASS/FAIL per item
 ```
@@ -137,7 +139,7 @@ The store kit in `docs/store/` (`LISTING.md`, `SUBMISSIONS.md`) is filled in as 
 
 ### web-game-portals — SDK adapters and portal knowledge
 
-Game code never calls a portal SDK or `localStorage`. It talks to one `platform` object (ads, cloud saves, lifecycle signals, username, site mute); the portal is chosen at build time by `VITE_PLATFORM` and the other adapters drop out of the bundle.
+Game code never calls a portal SDK or `localStorage`. It talks to one `platform` object (ads, cloud saves, lifecycle signals, username, site mute); the portal is chosen at build time by the build's mode (`npm run build:crazygames` runs `vite build --mode crazygames`) and the other adapters drop out of the bundle.
 
 ```sh
 init.sh mygame_ crazygames     # the platform layer + first portal
@@ -159,13 +161,14 @@ Reviews a change the way a game codebase breaks: allocations on the frame path, 
 | Y8 | ✅ | ✅ | SDK in `<head>`, initialised on its ready event |
 | GamePix | ✅ | ✅ | SDK v3, manual lifecycle; relative paths only, fonts bundled |
 | Playgama | ✅ | ✅ full | Bridge SDK: cloud storage, Sandbox certification, 30-day metric targets |
-| Poki, GameDistribution, Yandex, itch.io, … | skeleton | field notes | Added through the research procedure in `new-portal.md` |
+| Poki, Coolmath, Famobi, itch.io, Newgrounds, … | skeleton | short field notes | Added through the research procedure in `new-portal.md` |
+| GameDistribution, Yandex Games, any other | skeleton | research procedure | `add-platform.sh <portal> <SdkGlobal>` gives the adapter skeleton; `new-portal.md` says what to research first |
 
 ## Installation
 
 ```sh
-gh repo clone eslamnegm010/web-game-skills ~/.web-game-skills
-~/.web-game-skills/install.sh web-game
+git clone https://github.com/eslamnegm010/web-game-skills.git ~/.web-game-skills
+bash ~/.web-game-skills/install.sh web-game
 ```
 
 | Command | What it does |
@@ -188,9 +191,9 @@ Skills are **linked** into `~/.claude/skills/` where the shell may create symlin
 3. **Test**: `run.sh` until green — smoke, devices, and the SDK suite against the fake SDK.
 4. **Look at it**: `shot.mjs` on phone and desktop sizes; a game that only exists in test output is not done.
 5. **Film**: `record.mjs` a take, `cut.sh trailer` and `cut.sh preview` (landscape *and* portrait) for the listing.
-6. **Store kit**: `title-cover.py` for covers, fill `docs/store/LISTING.md`, `check-assets.sh` until it passes.
+6. **Store kit**: `title-cover.sh` for covers, fill `docs/store/LISTING.md`, `check-assets.sh` until it passes.
 7. **Package and submit**: `package.sh <portal>`, upload, run the portal's own QA tool, submit — and write what happened into `docs/store/SUBMISSIONS.md`.
-8. **After launch**: read the metrics per device daily, change one thing at a time, and feed what you learn back into the portal's reference here.
+8. **After launch**: read the metrics per device daily, change one thing at a time, and keep what you learn in `docs/store/SUBMISSIONS.md`. A correction that holds for every game is welcome here as a pull request.
 
 Or skip the manual path: with the skills installed, Claude Code runs this whole flow from plain requests.
 
@@ -199,13 +202,15 @@ Or skip the manual path: with the skills installed, Claude Code runs this whole 
 ```
 .
 ├── install.sh            # installer: bundles, links or copies skills into ~/.claude/skills
-├── skills.json           # bundles and the requires map between skills
+├── skills.json           # version, bundles and the requires map between skills
+├── examples/minimal-game # a tiny game wired for the toolkit: the CI's test bed
+├── tests/run.sh          # every check, from syntax to a filmed and cut take
 └── skills/
     ├── web-game-kit/         # entry point: init-game.sh + routing
     ├── web-game-capture/     # shot.mjs, with-preview.sh, lib/browser.mjs (the Chrome driver)
     ├── web-game-qa/          # run.sh, starter suites, the fake CrazyGames SDK
     ├── web-game-trailer/     # record.mjs, mix.mjs, cut.sh, director templates
-    ├── web-game-store-assets/# package.sh, check-assets.sh, title-cover.py, store kit templates
+    ├── web-game-store-assets/# package.sh, check-assets.sh, title-cover.sh/.py, store kit templates
     ├── web-game-portals/     # platform templates (one adapter per portal) + references/
     └── game-code-review/     # diff review (adapted, MIT — see its LICENSE)
 ```
@@ -216,7 +221,7 @@ Or skip the manual path: with the skills installed, Claude Code runs this whole 
 | --- | --- | --- |
 | Node 22+ | everything | The `.mjs` tools have no other dependencies |
 | Chrome, Chromium or Edge | capture, QA, trailer | Found automatically; override with `CHROME=/path/to/browser` |
-| `git` | installer, project setup | |
+| `git` | installer, project setup | the project must be a git repository (`git init` is enough) |
 | `ffmpeg` (+ `ffprobe`) | trailer, asset checks | macOS `brew install ffmpeg` · Windows `winget install ffmpeg` · Linux your package manager |
 | Python 3 + Pillow | covers, contact sheets | `pip install Pillow`; `python3` on macOS/Linux, `python`/`py` on Windows |
 
@@ -232,9 +237,26 @@ The scripts run on **macOS, Linux and Windows**. On Windows, run the `.sh` scrip
 
 **Skills were copied, not linked, on Windows.** Your shell may not create symlinks (Developer Mode off, not elevated). Copies work fine; just re-run `install.sh --update` after pulling updates — or enable Developer Mode and reinstall for live links.
 
+**Portal builds fail on Windows with "'VITE_PLATFORM' is not recognized".** The project was set up before 1.1. Change each `build:<portal>` script in `package.json` to `vite build --mode <portal> --outDir dist-<portal> --emptyOutDir`, and use `plugins: [platformHtml()]` from the project's current `src/platform/vite.js` (copy the new `vite.js` from `web-game-portals/templates/platform/`).
+
+**`run.sh` says "refusing to empty …".** `WEB_GAME_QA_OUT` (or `OUT`) points at a folder the runner did not make. Point it at a new folder.
+
 **A suite fails with "Chrome did not start" in a container or CI.** Chrome needs `--no-sandbox` when running as root. Point `CHROME` at a small wrapper script that adds it, or run as a normal user.
 
 **The zip from `package.sh` looks odd.** It is never made with PowerShell's `Compress-Archive` (its entry names use backslashes and break uploads): the order is `zip`, then Windows' own `tar.exe`, then Python — all produce standard forward-slash entries.
+
+## Testing
+
+```sh
+bash tests/run.sh           # everything the machine can run (needs Node, Chrome, ffmpeg, Python + Pillow for the full set)
+QUICK=1 bash tests/run.sh   # static checks and unit tests only
+```
+
+The same script runs in CI on Ubuntu, macOS and Windows (Git Bash) for every push and pull request: install, scaffold [`examples/minimal-game`](examples/minimal-game), portal builds, the browser suites, packaging, covers, a filmed take, cutting and the asset checks.
+
+## Contributing
+
+Portal rules change. A correction to a portal reference, a new adapter or a fake SDK is welcome as a pull request: follow `skills/web-game-portals/references/new-portal.md`, and run `bash tests/run.sh` before sending it.
 
 ## Design principles
 
@@ -243,6 +265,6 @@ The scripts run on **macOS, Linux and Windows**. On Windows, run the `.sh` scrip
 - **Portals are adapters.** The game talks to one `platform` object; each portal is a file chosen at build time. CrazyGames is the default; a new portal starts with research and a written reference, not with code.
 - **Everything is checked by a script where a script can check it** (asset sizes, video length, bundle limits, SDK calls) and says plainly what still needs a person's eye.
 
-## Credits
+## License and credits
 
-`game-code-review` is adapted from [AlterLab GameForge](https://github.com/alterlab-ieu/alterlab_gameforge) (MIT — see the skill's `LICENSE`). Everything else is original work, extracted from the `agent-skills` collection as the standalone web-game set.
+MIT — see [`LICENSE`](LICENSE). `game-code-review` is adapted from [AlterLab GameForge](https://github.com/alterlab-ieu/alterlab_gameforge) (MIT — see the skill's `LICENSE`). Everything else is original work. Changes: [`CHANGELOG.md`](CHANGELOG.md).

@@ -1,17 +1,18 @@
 ---
 name: game-code-review
 description: >
-  Reviews game code and AI-agent changes as a forked reviewer and writes a severity-ranked report:
-  frame-rate independence, hot-path allocations, state and resource lifecycle, hallucinated engine
-  APIs and leaked secrets, for Godot, Unity, Unreal and web. Use for "review my code", "review this
-  PR", "check what the agent wrote". Not for design documents (use game-design-review).
+  Reviews the code of a browser game (three.js, canvas, Phaser, PixiJS, Vite) and AI-agent changes to
+  it as a forked reviewer, and writes a severity-ranked report: frame-rate independence, hot-path
+  allocations, state and resource lifecycle, hallucinated library APIs, client-trusted state and
+  leaked secrets. Use when asked to review a web game's diff, branch or PR, or "check what the agent
+  wrote" in a game project. Not for non-game code, and not for design documents.
 argument-hint: "[path, git range like main..HEAD, or blank for uncommitted changes]"
 effort: high
 context: fork
 allowed-tools: Read, Glob, Grep, Write, Bash(git diff *), Bash(git log *), Bash(git show *), Bash(git status *)
 ---
 
-> **Adapted** from `alterlab-ieu/alterlab_gameforge` (`skills/workflows/game-code-review`, MIT, see `LICENSE`). Changes in this copy: web/three.js only (the Godot, Unity and Unreal checklists are not included), the house standard is the project's own `AGENTS.md` / `CLAUDE.md`, reports go to `docs/reviews/`, and references to other GameForge skills are informational only.
+> **Adapted** from `alterlab-ieu/alterlab_gameforge` (`skills/workflows/game-code-review`, MIT, see `LICENSE`). Changes in this copy: web/three.js only (the Godot, Unity and Unreal checklists are not included), the house standard is the project's own `AGENTS.md` / `CLAUDE.md`, reports go to `docs/reviews/`, and references to other GameForge skills were removed. Checks that name Godot, Unity or Unreal stay as context for mixed projects; the checklist is web-only.
 
 # AlterLab GameForge -- Game Code Review
 
@@ -58,10 +59,11 @@ network/security-relevant files fully and the rest by sampling; say so in Assump
 
 Gather silently before reading the diff:
 
-1. **Engine and version.** `.gameforge/project.json` (`engine`, `engine_version`, `phase`), else
-   `project.godot` (`config/features`), `ProjectSettings/ProjectVersion.txt`, `*.uproject`
-   (`EngineAssociation`), or `package.json` dependencies (`three`, `@react-three/fiber`, `phaser`,
-   `pixi.js`, `kaplay`, `excalibur`, `babylonjs`, `playcanvas`).
+1. **Engine and version.** `package.json` dependencies (`three`, `@react-three/fiber`, `phaser`,
+   `pixi.js`, `kaplay`, `excalibur`, `babylonjs`, `playcanvas`) and the installed versions in
+   `node_modules/<pkg>/package.json`. A project on Godot, Unity or Unreal is outside this skill's
+   checklist: say so in Assumptions and review only the general and AI-change checks.
+   **Phase** comes from the project's `CLAUDE.md`/`AGENTS.md`/README if it says, else assume production.
 2. **Phase.** `concept`/`prototype`/jam code gets maintainability findings downgraded one level.
    Security, secrets, client trust and data loss are **never** downgraded.
 3. **AI provenance.** `git log --format='%h %an %s%n%b' <range>` and look for `Co-Authored-By:`
@@ -89,8 +91,8 @@ Gather silently before reading the diff:
    renamed APIs and duplicated systems hide. Read it as if a stranger wrote it in a hurry.
 6. **The client is hostile.** In anything networked or with leaderboards, purchases or rewards, any
    value the client computes and the server accepts is an exploit until proven otherwise.
-7. **Report, do not refactor.** Suggest the smallest fix that removes the risk; leave redesigns to
-   `game-technical-director`.
+7. **Report, do not refactor.** Suggest the smallest fix that removes the risk; name a redesign as
+   a separate decision for the team, not as part of the fix.
 
 ## Step 1: Change map
 
@@ -160,10 +162,10 @@ APIs agents most often get wrong for current versions, idiom violations, and gre
 |---|---|
 | Web (Three.js, R3F, Phaser, PixiJS, Kaplay, Vite) | `${CLAUDE_SKILL_DIR}/references/web-checklist.md` |
 
-Version anchors as of November 2026: Godot 4.7.2 stable with 4.8 in beta (its .NET build needs .NET
-10); Unity 6.3 LTS and 6.6; Unreal Engine 5.8; Three.js r187 (WebGL default, `WebGPURenderer` opt-in);
-Phaser 4; PixiJS 8; Vite 8. If the project pins an older version, judge against that version and add
-an "upgrade note" finding only when the old version is out of support.
+Version anchors when this skill was last updated (November 2026): Three.js r187 (WebGL default,
+`WebGPURenderer` opt-in); Phaser 4; PixiJS 8; Vite 8. They age: the installed version in
+`node_modules` is always the ground truth. If the project pins an older version, judge against that
+version and add an "upgrade note" finding only when the old version is out of support.
 
 ## Step 5: Standard quality
 
@@ -198,55 +200,55 @@ overwrite an existing report, add `-2`). Use this structure:
 
 ```markdown
 # Code Review: [target, e.g. "main..feature/dash" or "src/combat/"]
-**Project:** Ember Drift | **Engine:** Godot 4.7.2 (GDScript) | **Phase:** prototype
-**Reviewed:** 2026-11-05 | **Files:** 14 changed (+612 / -88) | **Agent-authored:** 11 of 14
+**Project:** Example Runner | **Engine:** three.js r187 + Vite 8 | **Phase:** prototype
+**Reviewed:** YYYY-MM-DD | **Files:** 14 changed (+612 / -88) | **Agent-authored:** 11 of 14
 **Verdict:** Block -- 2 CRITICAL, 3 MAJOR, 4 MINOR, 2 NIT
 
 ## Assumptions
 - No argument given; reviewed uncommitted changes against HEAD.
-- `.gameforge/project.json` missing; engine version read from `project.godot` features ("4.7").
-- Multiplayer code present (`net/`), so client-trust checks applied at full severity.
+- three.js version read from `node_modules/three/package.json` (0.187.0).
+- A leaderboard call is present (`src/net/scores.js`), so client-trust checks applied at full severity.
 
 ## Findings
 
 ### CRITICAL
-**CR-01 Score accepted from client** -- `net/leaderboard.gd:42` -- A6 -- Confirmed
-> `rpc_id(1, "submit_score", score)` ... server stores `score` unchanged.
+**CR-01 Score accepted from client** -- `src/net/scores.js:42` -- A6 -- Confirmed
+> `fetch('/api/score', { method: 'POST', body: JSON.stringify({ score }) })` ... the endpoint stores it unchanged.
 Why it matters: any player can post an arbitrary score; the board is meaningless on day one.
-Fix: server derives score from validated events (kills, time) or re-simulates the run seed.
+Fix: the server derives the score from validated events, or re-simulates the run from its seed.
 
-**CR-02 `move_and_slide(velocity, Vector2.UP)`** -- `player/player.gd:88` -- A1 -- Confirmed
-> Godot 3 signature in a 4.7 project; parse error in 4.x.
-Fix: set `velocity` and `up_direction` as properties, then call `move_and_slide()`.
+**CR-02 Geometry created every frame** -- `src/fx/trail.js:31` -- G2 -- Confirmed
+> `const geo = new THREE.BufferGeometry().setFromPoints(points);` inside `update(dt)`, never disposed.
+Fix: allocate one geometry with a fixed-size buffer, update `position.array` and set `needsUpdate`.
 
 ### MAJOR
-**CR-03 Second input layer** -- `systems/input_router.gd` (new) -- A4 -- Likely
-> Duplicates the InputMap actions already read in `player/player.gd:12-30`.
+**CR-03 Second input layer** -- `src/input/router.js` (new) -- A4 -- Likely
+> Duplicates the key map already read in `src/player/controller.js:12-30`.
 Fix: delete the router or migrate all reads to it; one source of truth for bindings.
 
 ### MINOR / NIT
-- CR-06 Dash tuning literals -- `player/dash.gd:7,9,15` -- G7 -- move to `dash_tuning.tres`.
+- CR-06 Dash tuning literals -- `src/player/dash.js:7,9,15` -- G11 -- move to `src/data/tuning.json`.
 
 ## AI-change audit summary
 | Check | Result | Findings |
 |---|---|---|
-| A1 Outdated APIs | 1 found | CR-02 |
+| A1 Outdated APIs | none found | -- |
 | A2 Hallucinated APIs | none found | -- |
 | A3 Packages | n/a (no new deps) | -- |
 | A6 Client trust | 1 found | CR-01 |
-| A7 Secrets | none found (scanned src/, export_presets.cfg) | -- |
+| A7 Secrets | none found (scanned src/, dist/, .env*) | -- |
 
 ## Verify by hand (commands for the human or main session)
-- `godot --headless --check-only --script res://player/player.gd` (parse check)
-- Profile `enemy_spawner.gd` at 200 enemies; CR-07 is "profile first".
+- `npm run build` and the project's browser suites (parse and boot check).
+- Profile `src/enemies/spawner.js` at 200 enemies in the Performance panel; CR-07 is "profile first".
 
 ## What is good
-- Clean state machine in `player/states/` with explicit enter/exit.
+- Clean state machine in `src/player/states/` with explicit enter/exit.
 
 ## Next actions (effort-to-impact order)
 1. CR-01 server-side scoring (half a day) -- blocks any public build.
-2. CR-02 Godot 4 movement API (10 minutes).
-3. CR-03 remove duplicate input router (1 hour).
+2. CR-02 reuse the trail geometry (30 minutes).
+3. CR-03 remove the duplicate input router (1 hour).
 ```
 
 Finish by returning: verdict, counts, the three highest findings with IDs, and the report path.
@@ -266,21 +268,13 @@ This review is built to sit inside an agent loop, not after it.
   settings, or project/export settings; every new dependency; every file an MCP tool edited inside
   the editor (scene files, prefabs, `.uasset`s) because those changes are hard to diff.
 - **Never delegate the verdict.** The reviewer flags; a human decides to merge.
-- **MCP edits are code changes.** Unity's official MCP server (Unity AI open beta), Unreal 5.8's
-  experimental editor-only MCP plugin and community servers such as Coding-Solo/godot-mcp can change
-  scenes and settings directly. Review the resulting diff like any other commit, and keep those
-  servers bound to localhost.
-- **Upstream contributions are different.** Since 2026-06-30 the Godot Foundation rejects
-  substantially AI-authored contributions to the engine itself. This applies to engine PRs, not to
-  games made with Godot; flag it only when the diff targets `godotengine/godot`.
-- For the build-with-agents loop itself (spec, check command, small diffs) use
-  `/gameforge:game-vibe-code`; for provenance of AI-generated art and audio use
-  `/gameforge:game-ai-assets`.
+- **MCP edits are code changes.** Editor and browser MCP tools can change scenes, assets and
+  settings directly. Review the resulting diff like any other commit, and keep those servers bound
+  to localhost.
 
 Guardrails to recommend when the audit finds repeated agent debt: a short project `CLAUDE.md` that
-leads with the check command, a pinned engine version in `.gameforge/project.json`, a ban on new
-dependencies without approval, and this review wired into CI (`/gameforge:game-ci-pipeline` has
-an optional AI-review job).
+leads with the check command, pinned dependency versions (a committed lockfile), a ban on new
+dependencies without approval, and the project's browser suites (`web-game-qa`) in CI.
 
 ## Quality bar
 
@@ -297,14 +291,11 @@ A finished review:
 ## When NOT to use me
 
 | Need | Use instead |
-|---|---|
-| Review a design document or GDD | `game-design-review` |
-| Architecture decisions, tech stack, performance budgets | `game-technical-director` |
-| Test strategy, bug triage, regression plans | `game-qa-lead` |
-| Document an undocumented codebase | `game-reverse-document` |
-| Wire reviews, tests and builds into CI | `game-ci-pipeline` |
-| Netcode architecture and authority model | `game-multiplayer` |
-| Engine-specific implementation help | `game-godot-specialist`, `game-unity-specialist`, `game-unreal-specialist`, `game-threejs-specialist`, `game-web2d-specialist` |
+| --- | --- |
+| Run the game and check behaviour in a browser | `web-game-qa` |
+| Look at the running game, screenshots on phone sizes | `web-game-capture` |
+| Portal SDK rules (ads, saves, lifecycle) | `web-game-portals` |
+| A design document, or code that is not a game | another reviewer: this one judges game code |
 
 ## Example requests
 
